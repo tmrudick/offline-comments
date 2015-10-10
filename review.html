@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Comment: </title>
+    <link rel="stylesheet" href="bower_components/codemirror/lib/codemirror.css">
+    <link rel="stylesheet" href="bower_components/codemirror/theme/eclipse.css">
+    <script src="bower_components/codemirror/lib/codemirror.js"></script>
+    <script src="bower_components/codemirror/mode/javascript/javascript.js"></script>
+    <script src="bower_components/codemirror/addon/selection/active-line.js"></script>
+    <script src="bower_components/codemirror/addon/edit/matchbrackets.js"></script>
+    <script src="bower_components/codemirror/mode/clike/clike.js"></script>
+    <style type="text/css">
+      html,body,#container { margin: 0; padding: 0; height: 100%;}
+      h1,h2 { margin: 0;}
+      #header {
+        font-family: Helvetica, Arial, sans-serif;
+        background: #eee;
+        color: #444;
+        padding: 25px;
+      }
+      .comment { width: 100%; border: 1px solid black; padding: 2px;}
+      .comment input { display: block; width: 98%;}
+      .CodeMirror {border: 1px solid black; font-size:13px; height: 100%; margin: 25px;}
+    </style>
+  </head>
+  <body>
+    <div id="header">
+      <h1>Fractional Calculator Checkpoint 1</h1>
+      <h2>Tom Rudick</h2>
+    </div>
+    <div id="container">
+      <textarea id="code">
+package fracCalc1;
+
+import java.util.*;
+
+public class FractionalCalculator
+{
+  public static void main(String[] args)
+  {
+
+    Scanner console = new Scanner(System.in);
+    System.out.println("Welcome to the Fraction Calculator!");
+    
+    System.out.println("Goodbye!");
+  }
+
+}
+      </textarea>
+      <div class="comment" id="comment-template" style="display:none;">
+        <input type="text" />
+        <button>Remove</button>
+      </div>
+    </div>
+    <script>
+      var editor = CodeMirror.fromTextArea(document.querySelector("#code"), {
+        lineNumbers: true,
+        matchbrackets: true,
+        theme: 'eclipse',
+        readOnly: true,
+        mode: 'text/x-java'
+      });
+
+      var lastLineNumber = null;
+      var timeout = null;
+      var autosave = null;
+
+      editor.on('gutterClick', function(n, ln) {
+        if (lastLineNumber === ln) {
+          lastLineNumber = null;
+          clearTimeout(timeout);
+          addComment(ln);
+        } else {
+          lastLineNumber = ln;
+          timeout = setTimeout(function() {
+            lastLineNumber = null;
+          }, 500);
+        }
+      });
+
+      var comments = {};
+
+      function addComment(ln) {
+        var element = document.querySelector('#comment-template').cloneNode(true);
+        element.id = "comment-" + ln;
+        element.style.display = 'block';
+        var widget = editor.addLineWidget(ln, element);
+        element.querySelector('button').addEventListener('click', function() {
+          editor.removeLineWidget(widget);
+          delete comments[ln];
+        });
+        element.querySelector('input').addEventListener('keyup', function() {
+          comments[ln] = this.value;
+          clearTimeout(autosave);
+          autosave = setTimeout(function() {
+            console.log(comments);
+          }, 500);
+        });
+      }
+    </script>
+  </body>
+</html>
