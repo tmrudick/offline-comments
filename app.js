@@ -6,8 +6,7 @@ var fs = require('fs'),
 
 // Load templates
 var index = handlebars.compile(fs.readFileSync('index.html.hbs', 'utf-8')),
-  review = handlebars.compile(fs.readFileSync('review.html.hbs', 'utf-8')),
-  feedback = handlebars.compile(fs.readFileSync('review.html.hbs', 'utf-8'));
+  review = handlebars.compile(fs.readFileSync('review.html.hbs', 'utf-8'));
 
 var dir = process.argv[2],
   project = process.argv[3],
@@ -27,6 +26,7 @@ var server = http.createServer(function(req, res) {
       break;
     case 'POST':
       handlePost(req, res);
+      break;
   }
 });
 
@@ -43,7 +43,7 @@ function handleGet(req, res) {
       comments: "\"{}\""
     }));
   } else {
-    res.end(index({files:files}));    
+    res.end(index({ files: files }));    
   }
 }
 
@@ -52,22 +52,21 @@ server.listen(8080, function(err) {
 });
 
 function handlePost(req, res) {
-  var body = "";
+  var comments = "";
   req.on('data', function(chunk) {
-    body += chunk;
+    comments += chunk;
   });
 
   req.on('end', function() {
     var id = req.url.substring('/review/'.length);
     var filename = files[id];
-    console.log(dir, filename, id);
     fs.writeFileSync(path.join(dir, filename + '.html'), review({
       code: fs.readFileSync(path.join(dir, filename)),
       project: project,
       student: getStudentName(filename),
       commenting: false,
-      comments: JSON.stringify(body),
-      id: id
+      id: id,
+      comments: JSON.stringify(comments)
     }));
     res.end();
   });
