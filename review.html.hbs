@@ -2,13 +2,13 @@
 <html>
   <head>
     <title>Fractional Calculator Checkpoint 1</title>
-    <link rel="stylesheet" href="bower_components/codemirror/lib/codemirror.css">
-    <link rel="stylesheet" href="bower_components/codemirror/theme/eclipse.css">
-    <script src="bower_components/codemirror/lib/codemirror.js"></script>
-    <script src="bower_components/codemirror/mode/javascript/javascript.js"></script>
-    <script src="bower_components/codemirror/addon/selection/active-line.js"></script>
-    <script src="bower_components/codemirror/addon/edit/matchbrackets.js"></script>
-    <script src="bower_components/codemirror/mode/clike/clike.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/codemirror.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/theme/eclipse.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/codemirror.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/mode/javascript/javascript.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/addon/selection/active-line.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/addon/edit/matchbrackets.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/mode/clike/clike.js"></script>
     <style type="text/css">
       html,body,#container { margin: 0; padding: 0; height: 100%;}
       h1,h2 { margin: 0;}
@@ -25,31 +25,19 @@
   </head>
   <body>
     <div id="header">
-      <h1>Fractional Calculator Checkpoint 1</h1>
-      <h2>Tom Rudick</h2>
+      <h1>{{ project }}</h1>
+      <h2>{{ student }}</h2>
     </div>
     <div id="container">
       <textarea id="code">
-package fracCalc1;
-
-import java.util.*;
-
-public class FractionalCalculator
-{
-  public static void main(String[] args)
-  {
-
-    Scanner console = new Scanner(System.in);
-    System.out.println("Welcome to the Fraction Calculator!");
-    
-    System.out.println("Goodbye!");
-  }
-
-}
+{{ code }}
       </textarea>
       <div class="comment" id="comment-template" style="display:none;">
         <input type="text" />
         <button>Remove</button>
+      </div>
+      <div class="comment" id="readonly-template" style="display:none;">
+        <p></p>
       </div>
     </div>
     <script>
@@ -64,27 +52,37 @@ public class FractionalCalculator
       var lastLineNumber = null;
       var timeout = null;
       var autosave = null;
+      var editing = {{ editing }};
+      var fileId = {{ fileId }};
+      var comments = JSON.parse({{{ comments }}});
 
-      editor.on('gutterClick', function(n, ln) {
-        if (lastLineNumber === ln) {
-          lastLineNumber = null;
-          clearTimeout(timeout);
-          addComment(ln);
-        } else {
-          lastLineNumber = ln;
-          timeout = setTimeout(function() {
+      // Add comments
+      for (var key in comments) {
+        setComment(+key, comments[key]);
+      }
+
+      if (editing) {
+        editor.on('gutterClick', function(n, ln) {
+          if (lastLineNumber === ln) {
             lastLineNumber = null;
-          }, 500);
-        }
-      });
-
-      var comments = {};
+            clearTimeout(timeout);
+            addComment(ln);
+          } else {
+            lastLineNumber = ln;
+            timeout = setTimeout(function() {
+              lastLineNumber = null;
+            }, 500);
+          }
+        });
+      }
 
       function addComment(ln) {
         var element = document.querySelector('#comment-template').cloneNode(true);
         element.id = "comment-" + ln;
         element.style.display = 'block';
-        var widget = editor.addLineWidget(ln, element);
+        var widget = editor.addLineWidget(ln, element, {
+          handleMouseEvents: false
+        });
         element.querySelector('button').addEventListener('click', function() {
           editor.removeLineWidget(widget);
           delete comments[ln];
@@ -93,9 +91,23 @@ public class FractionalCalculator
           comments[ln] = this.value;
           clearTimeout(autosave);
           autosave = setTimeout(function() {
-            console.log(comments);
+            save();
           }, 500);
         });
+      }
+
+      function setComment(ln, text) {
+        var element = document.querySelector('#readonly-template').cloneNode(true);
+        element.querySelector('p').innerText = text;
+        element.id = "comment-" + ln;
+        element.style.display = 'block';
+        editor.addLineWidget(ln, element);
+      }
+
+      function save() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/review/' + fileId, true);
+        xhr.send(JSON.stringify(comments));
       }
     </script>
   </body>
