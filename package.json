@@ -1,0 +1,17 @@
+{
+  "name": "offline-comment",
+  "version": "1.0.0",
+  "description": "Code review comments offline",
+  "main": "app.js",
+  "dependencies": {
+    "change-case": "^2.3.0",
+    "handlebars": "^4.0.3",
+    "inliner": "^1.3.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tom Rudick <tmrudick@gmail.com>",
+  "license": "MIT"
+}

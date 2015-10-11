@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
   <head>
-    <title>Fractional Calculator Checkpoint 1</title>
+    <title>{{ project }} :: {{ student }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/codemirror.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/theme/eclipse.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/codemirror.js"></script>
@@ -25,6 +25,7 @@
     <div id="header">
       <h1>{{ project }}</h1>
       <h2>{{ student }}</h2>
+      <button id="save-button" style="display: none">Save</button>
     </div>
     <div id="container">
       <textarea id="code">
@@ -62,6 +63,9 @@
         }
 
         if (commenting) {
+          var saveBtn = document.querySelector('#save-button');
+          saveBtn.style.display = 'block';
+          saveBtn.addEventListener('click', save);
           editor.on('gutterClick', function(n, line) {
             addComment(line);
           });
@@ -81,16 +85,19 @@
             });
             element.querySelector('input').addEventListener('keyup', function() {
               comments[line] = this.value;
-              clearTimeout(autosaveTimeout);
-              autosaveTimeout = setTimeout(function() {
-                save();
-              }, 500);
             });
           }
         }
 
         function save() {
+          var saveBtn = document.querySelector('#save-button');
+          saveBtn.innerText = 'Saving...';
           var xhr = new XMLHttpRequest();
+          xhr.onreadystatechange = function() {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+              saveBtn.innerText = 'Save';
+            }
+          };
           xhr.open('POST', '/review/' + id, true);
           xhr.send(JSON.stringify(comments));
         }

@@ -2,7 +2,8 @@ var fs = require('fs'),
   http = require('http'),
   path = require('path'),
   handlebars = require('handlebars'),
-  caser = require('change-case');
+  caser = require('change-case'),
+  Inliner = require('inliner');
 
 // Load templates
 var index = handlebars.compile(fs.readFileSync('index.html.hbs', 'utf-8')),
@@ -13,7 +14,7 @@ var dir = process.argv[2],
   files = {};
 
 fs.readdirSync(dir).forEach(function(filename, idx) {
-  if (filename.indexOf('.java') > 0) {
+  if (filename.indexOf('.java') == filename.length - 5) {
     files[idx] = filename;
   }
 });
@@ -69,6 +70,11 @@ function handlePost(req, res) {
       comments: JSON.stringify(comments)
     }));
     res.end();
+
+    // new Inliner(path.join(dir, filename + '.html'), { collapseWhitespace: false }, 
+    //   function(err, html) {
+    //     fs.writeFileSync(path.join(dir, filename + '.html'), html);
+    // });
   });
 }
 
