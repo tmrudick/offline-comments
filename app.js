@@ -38,8 +38,8 @@ function handleGet(req, res) {
       code: fs.readFileSync(path.join(dir, filename)),
       project: project,
       student: getStudentName(filename),
-      editing: true,
-      fileId: id,
+      commenting: true,
+      id: id,
       comments: "\"{}\""
     }));
   } else {
@@ -65,9 +65,9 @@ function handlePost(req, res) {
       code: fs.readFileSync(path.join(dir, filename)),
       project: project,
       student: getStudentName(filename),
-      editing: false,
+      commenting: false,
       comments: JSON.stringify(body),
-      fileId: id
+      id: id
     }));
     res.end();
   });

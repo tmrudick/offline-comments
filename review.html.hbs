@@ -5,9 +5,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/codemirror.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/theme/eclipse.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/codemirror.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/mode/javascript/javascript.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/addon/selection/active-line.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/addon/edit/matchbrackets.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.7.0/mode/clike/clike.js"></script>
     <style type="text/css">
       html,body,#container { margin: 0; padding: 0; height: 100%;}
@@ -18,6 +15,7 @@
         color: #444;
         padding: 25px;
       }
+      .hidden { display: none; }
       .comment { width: 100%; border: 1px solid black; padding: 2px;}
       .comment input { display: block; width: 98%;}
       .CodeMirror {border: 1px solid black; font-size:13px; height: 100%; margin: 25px;}
@@ -32,83 +30,71 @@
       <textarea id="code">
 {{ code }}
       </textarea>
-      <div class="comment" id="comment-template" style="display:none;">
+      <div class="hidden">
+      <div class="comment" id="editable-template">
         <input type="text" />
         <button>Remove</button>
       </div>
-      <div class="comment" id="readonly-template" style="display:none;">
+      <div class="comment" id="readonly-template">
         <p></p>
       </div>
     </div>
+    </div>
     <script>
-      var editor = CodeMirror.fromTextArea(document.querySelector("#code"), {
-        lineNumbers: true,
-        matchbrackets: true,
-        theme: 'eclipse',
-        readOnly: true,
-        mode: 'text/x-java'
-      });
+      (function Comment() {
+        // Create editor for Java files
+        var editor = CodeMirror.fromTextArea(document.querySelector("#code"), 
+        {
+          lineNumbers: true,
+          theme: 'eclipse',
+          readOnly: true,
+          mode: 'text/x-java'
+        });
 
-      var lastLineNumber = null;
-      var timeout = null;
-      var autosave = null;
-      var editing = {{ editing }};
-      var fileId = {{ fileId }};
-      var comments = JSON.parse({{{ comments }}});
+        // Server-generated variables
+        var autosaveTimeout = null,
+          id = {{ id }},
+          commenting = {{ commenting }},
+          comments = JSON.parse({{{ comments }}});
 
-      // Add comments
-      for (var key in comments) {
-        setComment(+key, comments[key]);
-      }
+        for (var key in comments) {
+          addComment(+key, comments[key]);
+        }
 
-      if (editing) {
-        editor.on('gutterClick', function(n, ln) {
-          if (lastLineNumber === ln) {
-            lastLineNumber = null;
-            clearTimeout(timeout);
-            addComment(ln);
+        if (commenting) {
+          editor.on('gutterClick', function(n, line) {
+            addComment(line);
+          });
+        }
+
+        function addComment(line, text) {
+          var element = document.querySelector(text ? '#readonly-template' : '#editable-template').cloneNode(true);
+          element.id = '';
+          var widget = editor.addLineWidget(line, element);
+
+          if (text) {
+            element.querySelector('p').innerText = text;
           } else {
-            lastLineNumber = ln;
-            timeout = setTimeout(function() {
-              lastLineNumber = null;
-            }, 500);
+            element.querySelector('button').addEventListener('click', function() {
+              widget.clear();
+              delete comments[line];
+            });
+            element.querySelector('input').addEventListener('keyup', function() {
+              comments[line] = this.value;
+              clearTimeout(autosaveTimeout);
+              autosaveTimeout = setTimeout(function() {
+                save();
+              }, 500);
+            });
           }
-        });
-      }
+        }
 
-      function addComment(ln) {
-        var element = document.querySelector('#comment-template').cloneNode(true);
-        element.id = "comment-" + ln;
-        element.style.display = 'block';
-        var widget = editor.addLineWidget(ln, element, {
-          handleMouseEvents: false
-        });
-        element.querySelector('button').addEventListener('click', function() {
-          editor.removeLineWidget(widget);
-          delete comments[ln];
-        });
-        element.querySelector('input').addEventListener('keyup', function() {
-          comments[ln] = this.value;
-          clearTimeout(autosave);
-          autosave = setTimeout(function() {
-            save();
-          }, 500);
-        });
-      }
-
-      function setComment(ln, text) {
-        var element = document.querySelector('#readonly-template').cloneNode(true);
-        element.querySelector('p').innerText = text;
-        element.id = "comment-" + ln;
-        element.style.display = 'block';
-        editor.addLineWidget(ln, element);
-      }
-
-      function save() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/review/' + fileId, true);
-        xhr.send(JSON.stringify(comments));
-      }
+        function save() {
+          var xhr = new XMLHttpRequest();
+          xhr.open('POST', '/review/' + id, true);
+          xhr.send(JSON.stringify(comments));
+        }
+      })();
     </script>
   </body>
 </html>
